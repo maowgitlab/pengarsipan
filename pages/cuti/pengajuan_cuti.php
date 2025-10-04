@@ -1,3 +1,25 @@
+<?php
+$currentYear = date('Y');
+$currentNip = mysqli_real_escape_string($koneksi, $_SESSION['nip']);
+$totalCutiTahunan = 12;
+$remainingCutiDays = $totalCutiTahunan;
+
+$cutiUsageQuery = mysqli_query(
+    $koneksi,
+    "SELECT COALESCE(SUM(DATEDIFF(c.tanggal_selesai, c.tanggal_mulai) + 1), 0) AS used_days
+     FROM tb_cuti c
+     LEFT JOIN tb_surat_cuti sc ON sc.id_cuti = c.id
+     WHERE c.nip = '$currentNip'
+       AND YEAR(c.tanggal_mulai) = '$currentYear'
+       AND (sc.status IS NULL OR sc.status IN ('diajukan', 'diterima'))"
+);
+
+if ($cutiUsageQuery) {
+    $cutiUsageRow = mysqli_fetch_assoc($cutiUsageQuery);
+    $usedDays = isset($cutiUsageRow['used_days']) ? (int) $cutiUsageRow['used_days'] : 0;
+    $remainingCutiDays = max($totalCutiTahunan - $usedDays, 0);
+}
+?>
 <div class="pagetitle">
     <h1>Pengajuan Cuti</h1>
     <nav>
@@ -14,6 +36,10 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Data Pengajuan Cuti Anda</h5>
+                    <div class="alert alert-info" role="alert">
+                        Sisa cuti Anda pada tahun <?= htmlspecialchars($currentYear); ?>: <strong><?= $remainingCutiDays; ?></strong>
+                        hari dari total <?= $totalCutiTahunan; ?> hari.
+                    </div>
                     <div class="d-flex justify-content-between my-3">
                         <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambah">Buat Pengajuan Baru</button>
                     </div>
@@ -33,7 +59,7 @@
                         </thead>
                         <tbody>
                             <?php $no = 1;
-                            $nip = $_SESSION['nip'];
+                            $nip = $currentNip;
                             $data = mysqli_query($koneksi, "SELECT tb_surat_cuti.*, tb_surat.jenis_surat, tb_surat.id AS id_surat, tb_cuti.id AS id_cuti, tb_cuti.nip, tb_cuti.alasan, tb_cuti.tanggal_mulai, tb_cuti.tanggal_selesai FROM tb_surat_cuti JOIN tb_cuti JOIN tb_surat ON tb_surat_cuti.id_cuti = tb_cuti.id AND tb_surat_cuti.id_surat = tb_surat.id WHERE tb_cuti.nip = '$nip' ORDER BY tb_surat_cuti.id DESC");
                             foreach ($data as $row) : ?>
                                 <tr>

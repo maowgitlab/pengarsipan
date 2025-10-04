@@ -22,6 +22,7 @@
                                 <th scope="col">Gaji Awal</th>
                                 <th scope="col">Gaji Akhir</th>
                                 <th scope="col">Priode</th>
+                                <th scope="col">File Surat</th>
                                 <th scope="col">Aksi</th>
                             </tr>
                         </thead>
@@ -36,6 +37,13 @@
                                     <td><?= 'Rp ' . number_format($row['gaji_awal'], 0, ',', '.'); ?></td>
                                     <td><?= 'Rp ' . number_format($row['gaji_akhir'], 0, ',', '.'); ?></td>
                                     <td><?= $row['tanggal_surat']; ?></td>
+                                    <td>
+                                        <?php if (!empty($row['file'])) : ?>
+                                            <a href="assets/file/gaji/<?= htmlspecialchars($row['file']); ?>" target="_blank" class="btn btn-sm btn-secondary"><i class="bi bi-file-earmark-pdf"></i></a>
+                                        <?php else : ?>
+                                            <span class="text-muted">-</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td>
                                         <a href="report/download_slip_gaji.php?id=<?= $row['id']; ?>" target="_blank" class="btn btn-sm btn-primary"><i class="bi bi-download"></i></a>
                                     </td>
