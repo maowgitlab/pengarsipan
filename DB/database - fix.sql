@@ -356,22 +356,23 @@ CREATE TABLE IF NOT EXISTS `tb_surat_gaji` (
   `id_gaji` int DEFAULT NULL,
   `id_bidang` int DEFAULT NULL,
   `tanggal_surat` date DEFAULT NULL,
+  `file` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table pengarsipan.tb_surat_gaji: ~10 rows (approximately)
 DELETE FROM `tb_surat_gaji`;
-INSERT INTO `tb_surat_gaji` (`id`, `no_surat`, `id_surat`, `id_gaji`, `id_bidang`, `tanggal_surat`) VALUES
-	(1, 'SG/001/2024', 5, 1, 1, '2024-01-05'),
-	(2, 'SG/002/2024', 5, 2, 2, '2024-02-05'),
-	(3, 'SG/003/2024', 5, 3, 3, '2024-03-05'),
-	(4, 'SG/004/2024', 5, 4, 4, '2024-04-05'),
-	(5, 'SG/005/2024', 5, 5, 5, '2024-05-05'),
-	(6, 'SG/006/2024', 5, 6, 3, '2024-06-05'),
-	(7, 'SG/007/2024', 5, 7, 2, '2024-07-05'),
-	(8, 'SG/008/2024', 5, 8, 1, '2024-08-05'),
-	(9, 'SG/009/2024', 5, 9, 4, '2024-09-05'),
-	(10, 'SG/010/2024', 5, 10, 5, '2024-10-05');
+INSERT INTO `tb_surat_gaji` (`id`, `no_surat`, `id_surat`, `id_gaji`, `id_bidang`, `tanggal_surat`, `file`) VALUES
+        (1, 'SG/001/2024', 5, 1, 1, '2024-01-05', 'surat_gaji_001.pdf'),
+        (2, 'SG/002/2024', 5, 2, 2, '2024-02-05', 'surat_gaji_002.pdf'),
+        (3, 'SG/003/2024', 5, 3, 3, '2024-03-05', 'surat_gaji_003.pdf'),
+        (4, 'SG/004/2024', 5, 4, 4, '2024-04-05', 'surat_gaji_004.pdf'),
+        (5, 'SG/005/2024', 5, 5, 5, '2024-05-05', 'surat_gaji_005.pdf'),
+        (6, 'SG/006/2024', 5, 6, 3, '2024-06-05', 'surat_gaji_006.pdf'),
+        (7, 'SG/007/2024', 5, 7, 2, '2024-07-05', 'surat_gaji_007.pdf'),
+        (8, 'SG/008/2024', 5, 8, 1, '2024-08-05', 'surat_gaji_008.pdf'),
+        (9, 'SG/009/2024', 5, 9, 4, '2024-09-05', 'surat_gaji_009.pdf'),
+        (10, 'SG/010/2024', 5, 10, 5, '2024-10-05', 'surat_gaji_010.pdf');
 
 -- Dumping structure for table pengarsipan.tb_surat_keluar
 DROP TABLE IF EXISTS `tb_surat_keluar`;

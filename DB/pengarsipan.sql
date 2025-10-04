@@ -138,6 +138,7 @@ CREATE TABLE IF NOT EXISTS `tb_surat_gaji` (
   `id_gaji` int DEFAULT NULL,
   `id_bidang` int DEFAULT NULL,
   `tanggal_surat` date DEFAULT NULL,
+  `file` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
