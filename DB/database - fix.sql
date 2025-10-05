@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS `penilaian_kawasan` (
 -- Dumping data for table pengarsipan.penilaian_kawasan: ~15 rows (approximately)
 DELETE FROM `penilaian_kawasan`;
 INSERT INTO `penilaian_kawasan` (`id_penilaian`, `id_kawasan`, `id_indikator`, `id_periode`, `nilai`, `keterangan`, `tanggal_penilaian`, `bukti_file`) VALUES
-	(1, 1, 1, 1, 8.50, 'Lingkungan bersih', '2024-01-15', NULL),
+        (1, 1, 1, 1, 8.50, 'Lingkungan bersih', '2024-01-15', NULL),
 	(2, 1, 2, 1, 7.80, 'Jalan baik, saluran memadai', '2024-01-15', NULL),
 	(3, 2, 1, 1, 6.20, 'Banyak sampah di saluran', '2024-01-15', NULL),
 	(4, 2, 2, 1, 5.50, 'Jalan rusak', '2024-01-15', NULL),
@@ -126,7 +126,38 @@ INSERT INTO `penilaian_kawasan` (`id_penilaian`, `id_kawasan`, `id_indikator`, `
 	(12, 7, 4, 2, 8.50, 'Bangunan kokoh', '2024-04-10', NULL),
 	(13, 8, 5, 3, 6.00, 'Akses air terbatas', '2024-07-12', NULL),
 	(14, 9, 3, 4, 7.80, 'Kepadatan rendah', '2024-10-15', NULL),
-	(15, 10, 4, 1, 6.50, 'Bangunan perlu renovasi', '2024-01-15', NULL);
+        (15, 10, 4, 1, 6.50, 'Bangunan perlu renovasi', '2024-01-15', NULL);
+
+-- Dumping structure for table pengarsipan.penilaian_kawasan_files
+DROP TABLE IF EXISTS `penilaian_kawasan_files`;
+CREATE TABLE IF NOT EXISTS `penilaian_kawasan_files` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `id_penilaian` int NOT NULL,
+  `file_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `original_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `id_penilaian` (`id_penilaian`),
+  CONSTRAINT `penilaian_kawasan_files_ibfk_1` FOREIGN KEY (`id_penilaian`) REFERENCES `penilaian_kawasan` (`id_penilaian`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Dumping data for table pengarsipan.penilaian_kawasan_files: ~0 rows (approximately)
+DELETE FROM `penilaian_kawasan_files`;
+
+-- Dumping structure for table pengarsipan.penilaian_kawasan_tim
+DROP TABLE IF EXISTS `penilaian_kawasan_tim`;
+CREATE TABLE IF NOT EXISTS `penilaian_kawasan_tim` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `id_penilaian` int NOT NULL,
+  `id_pegawai` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `id_penilaian` (`id_penilaian`),
+  KEY `id_pegawai` (`id_pegawai`),
+  CONSTRAINT `penilaian_kawasan_tim_ibfk_1` FOREIGN KEY (`id_penilaian`) REFERENCES `penilaian_kawasan` (`id_penilaian`) ON DELETE CASCADE,
+  CONSTRAINT `penilaian_kawasan_tim_ibfk_2` FOREIGN KEY (`id_pegawai`) REFERENCES `tb_pegawai` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Dumping data for table pengarsipan.penilaian_kawasan_tim: ~0 rows (approximately)
+DELETE FROM `penilaian_kawasan_tim`;
 
 -- Dumping structure for table pengarsipan.periode_penilaian
 DROP TABLE IF EXISTS `periode_penilaian`;

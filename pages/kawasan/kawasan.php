@@ -2,7 +2,8 @@
 $detailPenilaianKawasan = [];
 $detailQuery = mysqli_query(
     $koneksi,
-    "SELECT pk.id_kawasan,
+    "SELECT pk.id_penilaian,
+            pk.id_kawasan,
             i.nama_indikator,
             pk.nilai,
             pk.keterangan,
@@ -22,6 +23,87 @@ if ($detailQuery) {
             $periodeLabel = date('F', mktime(0, 0, 0, (int) $detailRow['bulan'], 1)) . ' ' . $detailRow['tahun'];
         }
 
+        $penilaianId = (int) ($detailRow['id_penilaian'] ?? 0);
+
+        $teamMembers = [];
+        if ($penilaianId > 0) {
+            $teamQuery = mysqli_query(
+                $koneksi,
+                "SELECT t.id_pegawai, p.nama_pegawai, p.jabatan, b.nama_bidang
+                 FROM penilaian_kawasan_tim t
+                 JOIN tb_pegawai p ON t.id_pegawai = p.id
+                 LEFT JOIN tb_bidang b ON p.id_bidang = b.id
+                 WHERE t.id_penilaian = '$penilaianId'
+                 ORDER BY p.nama_pegawai"
+            );
+
+            if ($teamQuery) {
+                while ($teamRow = mysqli_fetch_assoc($teamQuery)) {
+                    $teamMembers[] = [
+                        'nama' => $teamRow['nama_pegawai'] ?? '-',
+                        'jabatan' => $teamRow['jabatan'] ?? '',
+                        'bidang' => $teamRow['nama_bidang'] ?? ''
+                    ];
+                }
+            }
+        }
+
+        $attachments = [];
+        if ($penilaianId > 0) {
+            $attachmentQuery = mysqli_query(
+                $koneksi,
+                "SELECT file_name, original_name
+                 FROM penilaian_kawasan_files
+                 WHERE id_penilaian = '$penilaianId'
+                 ORDER BY id ASC"
+            );
+
+            if ($attachmentQuery) {
+                while ($attachmentRow = mysqli_fetch_assoc($attachmentQuery)) {
+                    if (empty($attachmentRow['file_name'])) {
+                        continue;
+                    }
+
+                    $attachments[] = [
+                        'file_name' => $attachmentRow['file_name'],
+                        'original_name' => $attachmentRow['original_name'] ?: $attachmentRow['file_name'],
+                        'url' => 'assets/file/bukti/' . $attachmentRow['file_name']
+                    ];
+                }
+            }
+
+            if (empty($attachments) && !empty($detailRow['bukti_file'])) {
+                $legacyName = mysqli_real_escape_string($koneksi, $detailRow['bukti_file']);
+                mysqli_query(
+                    $koneksi,
+                    "INSERT INTO penilaian_kawasan_files (id_penilaian, file_name, original_name)
+                     VALUES ('$penilaianId', '$legacyName', '$legacyName')"
+                );
+
+                $attachmentQuery = mysqli_query(
+                    $koneksi,
+                    "SELECT file_name, original_name
+                     FROM penilaian_kawasan_files
+                     WHERE id_penilaian = '$penilaianId'
+                     ORDER BY id ASC"
+                );
+
+                if ($attachmentQuery) {
+                    while ($attachmentRow = mysqli_fetch_assoc($attachmentQuery)) {
+                        if (empty($attachmentRow['file_name'])) {
+                            continue;
+                        }
+
+                        $attachments[] = [
+                            'file_name' => $attachmentRow['file_name'],
+                            'original_name' => $attachmentRow['original_name'] ?: $attachmentRow['file_name'],
+                            'url' => 'assets/file/bukti/' . $attachmentRow['file_name']
+                        ];
+                    }
+                }
+            }
+        }
+
         $detailPenilaianKawasan[$detailRow['id_kawasan']][] = [
             'indikator' => $detailRow['nama_indikator'] ?? '-',
             'nilai' => $detailRow['nilai'],
@@ -29,7 +111,9 @@ if ($detailQuery) {
             'periode' => $periodeLabel,
             'tanggal_penilaian' => $detailRow['tanggal_penilaian'] ?? '-',
             'bukti' => $detailRow['bukti_file'] ? 'assets/file/bukti/' . $detailRow['bukti_file'] : null,
-            'bukti_nama' => $detailRow['bukti_file'] ?? ''
+            'bukti_nama' => $detailRow['bukti_file'] ?? '',
+            'tim' => $teamMembers,
+            'lampiran' => $attachments
         ];
     }
 }
@@ -289,7 +373,34 @@ if ($detailQuery) {
             const keterangan = escapeHtml(item.keterangan || '-');
             const periode = escapeHtml(item.periode || '-');
             const tanggal = escapeHtml(item.tanggal_penilaian || '-');
-            const bukti = item.bukti ? '<a href="' + escapeHtml(item.bukti) + '" target="_blank">Lihat</a>' : '-';
+            const timData = Array.isArray(item.tim) ? item.tim : [];
+            const timContent = timData.length ? timData.map(function (member) {
+                const name = escapeHtml(member.nama || '-');
+                const infoParts = [];
+                if (member.jabatan) {
+                    infoParts.push(escapeHtml(member.jabatan));
+                }
+                if (member.bidang) {
+                    infoParts.push(escapeHtml(member.bidang));
+                }
+                const infoText = infoParts.length ? ' (' + infoParts.join(' - ') + ')' : '';
+                return '<div>' + name + infoText + '</div>';
+            }).join('') : '<span class="text-muted">-</span>';
+
+            const lampiranData = Array.isArray(item.lampiran) ? item.lampiran : [];
+            let lampiranContent;
+            if (lampiranData.length) {
+                lampiranContent = lampiranData.map(function (file) {
+                    const url = escapeHtml(file.url || '#');
+                    const label = escapeHtml(file.original_name || file.file_name || 'Lampiran');
+                    return '<div><a href="' + url + '" target="_blank">' + label + '</a></div>';
+                }).join('');
+            } else if (item.bukti) {
+                const legacyLabel = escapeHtml(item.bukti_nama || 'Lihat');
+                lampiranContent = '<div><a href="' + escapeHtml(item.bukti) + '" target="_blank">' + legacyLabel + '</a></div>';
+            } else {
+                lampiranContent = '<span class="text-muted">-</span>';
+            }
 
             return '<tr>' +
                 '<td>' + (index + 1) + '</td>' +
@@ -298,7 +409,8 @@ if ($detailQuery) {
                 '<td>' + keterangan + '</td>' +
                 '<td>' + periode + '</td>' +
                 '<td>' + tanggal + '</td>' +
-                '<td>' + bukti + '</td>' +
+                '<td>' + timContent + '</td>' +
+                '<td>' + lampiranContent + '</td>' +
             '</tr>';
         }).join('');
 
@@ -312,7 +424,8 @@ if ($detailQuery) {
                         '<th>Keterangan</th>' +
                         '<th>Periode</th>' +
                         '<th>Tanggal Penilaian</th>' +
-                        '<th>Bukti</th>' +
+                        '<th>Tim Penilai</th>' +
+                        '<th>Lampiran</th>' +
                     '</tr>' +
                 '</thead>' +
                 '<tbody>' + rows + '</tbody>' +

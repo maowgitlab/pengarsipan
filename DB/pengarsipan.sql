@@ -59,6 +59,57 @@ CREATE TABLE IF NOT EXISTS `tb_document_tags` (
 
 -- Data exporting was unselected.
 
+-- Dumping structure for table pengarsipan.penilaian_kawasan
+DROP TABLE IF EXISTS `penilaian_kawasan`;
+CREATE TABLE IF NOT EXISTS `penilaian_kawasan` (
+  `id_penilaian` int NOT NULL AUTO_INCREMENT,
+  `id_kawasan` int DEFAULT NULL,
+  `id_indikator` int DEFAULT NULL,
+  `id_periode` int DEFAULT NULL,
+  `nilai` decimal(4,2) DEFAULT NULL,
+  `keterangan` text CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
+  `tanggal_penilaian` date DEFAULT NULL,
+  `bukti_file` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  PRIMARY KEY (`id_penilaian`),
+  KEY `id_kawasan` (`id_kawasan`),
+  KEY `id_indikator` (`id_indikator`),
+  KEY `id_periode` (`id_periode`),
+  CONSTRAINT `penilaian_kawasan_ibfk_1` FOREIGN KEY (`id_kawasan`) REFERENCES `kawasan` (`id_kawasan`),
+  CONSTRAINT `penilaian_kawasan_ibfk_2` FOREIGN KEY (`id_indikator`) REFERENCES `indikator_penilaian` (`id_indikator`),
+  CONSTRAINT `penilaian_kawasan_ibfk_3` FOREIGN KEY (`id_periode`) REFERENCES `periode_penilaian` (`id_periode`)
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table pengarsipan.penilaian_kawasan_files
+DROP TABLE IF EXISTS `penilaian_kawasan_files`;
+CREATE TABLE IF NOT EXISTS `penilaian_kawasan_files` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `id_penilaian` int NOT NULL,
+  `file_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `original_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `id_penilaian` (`id_penilaian`),
+  CONSTRAINT `penilaian_kawasan_files_ibfk_1` FOREIGN KEY (`id_penilaian`) REFERENCES `penilaian_kawasan` (`id_penilaian`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table pengarsipan.penilaian_kawasan_tim
+DROP TABLE IF EXISTS `penilaian_kawasan_tim`;
+CREATE TABLE IF NOT EXISTS `penilaian_kawasan_tim` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `id_penilaian` int NOT NULL,
+  `id_pegawai` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `id_penilaian` (`id_penilaian`),
+  KEY `id_pegawai` (`id_pegawai`),
+  CONSTRAINT `penilaian_kawasan_tim_ibfk_1` FOREIGN KEY (`id_penilaian`) REFERENCES `penilaian_kawasan` (`id_penilaian`) ON DELETE CASCADE,
+  CONSTRAINT `penilaian_kawasan_tim_ibfk_2` FOREIGN KEY (`id_pegawai`) REFERENCES `tb_pegawai` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Data exporting was unselected.
+
 -- Dumping structure for table pengarsipan.tb_gaji
 DROP TABLE IF EXISTS `tb_gaji`;
 CREATE TABLE IF NOT EXISTS `tb_gaji` (
