@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS `penilaian_kawasan` (
 -- Dumping data for table pengarsipan.penilaian_kawasan: ~15 rows (approximately)
 DELETE FROM `penilaian_kawasan`;
 INSERT INTO `penilaian_kawasan` (`id_penilaian`, `id_kawasan`, `id_indikator`, `id_periode`, `nilai`, `keterangan`, `tanggal_penilaian`, `bukti_file`) VALUES
-	(1, 1, 1, 1, 8.50, 'Lingkungan bersih', '2024-01-15', NULL),
+        (1, 1, 1, 1, 8.50, 'Lingkungan bersih', '2024-01-15', NULL),
 	(2, 1, 2, 1, 7.80, 'Jalan baik, saluran memadai', '2024-01-15', NULL),
 	(3, 2, 1, 1, 6.20, 'Banyak sampah di saluran', '2024-01-15', NULL),
 	(4, 2, 2, 1, 5.50, 'Jalan rusak', '2024-01-15', NULL),
@@ -126,7 +126,38 @@ INSERT INTO `penilaian_kawasan` (`id_penilaian`, `id_kawasan`, `id_indikator`, `
 	(12, 7, 4, 2, 8.50, 'Bangunan kokoh', '2024-04-10', NULL),
 	(13, 8, 5, 3, 6.00, 'Akses air terbatas', '2024-07-12', NULL),
 	(14, 9, 3, 4, 7.80, 'Kepadatan rendah', '2024-10-15', NULL),
-	(15, 10, 4, 1, 6.50, 'Bangunan perlu renovasi', '2024-01-15', NULL);
+        (15, 10, 4, 1, 6.50, 'Bangunan perlu renovasi', '2024-01-15', NULL);
+
+-- Dumping structure for table pengarsipan.penilaian_kawasan_files
+DROP TABLE IF EXISTS `penilaian_kawasan_files`;
+CREATE TABLE IF NOT EXISTS `penilaian_kawasan_files` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `id_penilaian` int NOT NULL,
+  `file_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `original_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `id_penilaian` (`id_penilaian`),
+  CONSTRAINT `penilaian_kawasan_files_ibfk_1` FOREIGN KEY (`id_penilaian`) REFERENCES `penilaian_kawasan` (`id_penilaian`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Dumping data for table pengarsipan.penilaian_kawasan_files: ~0 rows (approximately)
+DELETE FROM `penilaian_kawasan_files`;
+
+-- Dumping structure for table pengarsipan.penilaian_kawasan_tim
+DROP TABLE IF EXISTS `penilaian_kawasan_tim`;
+CREATE TABLE IF NOT EXISTS `penilaian_kawasan_tim` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `id_penilaian` int NOT NULL,
+  `id_pegawai` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `id_penilaian` (`id_penilaian`),
+  KEY `id_pegawai` (`id_pegawai`),
+  CONSTRAINT `penilaian_kawasan_tim_ibfk_1` FOREIGN KEY (`id_penilaian`) REFERENCES `penilaian_kawasan` (`id_penilaian`) ON DELETE CASCADE,
+  CONSTRAINT `penilaian_kawasan_tim_ibfk_2` FOREIGN KEY (`id_pegawai`) REFERENCES `tb_pegawai` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Dumping data for table pengarsipan.penilaian_kawasan_tim: ~0 rows (approximately)
+DELETE FROM `penilaian_kawasan_tim`;
 
 -- Dumping structure for table pengarsipan.periode_penilaian
 DROP TABLE IF EXISTS `periode_penilaian`;
@@ -356,22 +387,23 @@ CREATE TABLE IF NOT EXISTS `tb_surat_gaji` (
   `id_gaji` int DEFAULT NULL,
   `id_bidang` int DEFAULT NULL,
   `tanggal_surat` date DEFAULT NULL,
+  `file` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Dumping data for table pengarsipan.tb_surat_gaji: ~10 rows (approximately)
 DELETE FROM `tb_surat_gaji`;
-INSERT INTO `tb_surat_gaji` (`id`, `no_surat`, `id_surat`, `id_gaji`, `id_bidang`, `tanggal_surat`) VALUES
-	(1, 'SG/001/2024', 5, 1, 1, '2024-01-05'),
-	(2, 'SG/002/2024', 5, 2, 2, '2024-02-05'),
-	(3, 'SG/003/2024', 5, 3, 3, '2024-03-05'),
-	(4, 'SG/004/2024', 5, 4, 4, '2024-04-05'),
-	(5, 'SG/005/2024', 5, 5, 5, '2024-05-05'),
-	(6, 'SG/006/2024', 5, 6, 3, '2024-06-05'),
-	(7, 'SG/007/2024', 5, 7, 2, '2024-07-05'),
-	(8, 'SG/008/2024', 5, 8, 1, '2024-08-05'),
-	(9, 'SG/009/2024', 5, 9, 4, '2024-09-05'),
-	(10, 'SG/010/2024', 5, 10, 5, '2024-10-05');
+INSERT INTO `tb_surat_gaji` (`id`, `no_surat`, `id_surat`, `id_gaji`, `id_bidang`, `tanggal_surat`, `file`) VALUES
+        (1, 'SG/001/2024', 5, 1, 1, '2024-01-05', 'surat_gaji_001.pdf'),
+        (2, 'SG/002/2024', 5, 2, 2, '2024-02-05', 'surat_gaji_002.pdf'),
+        (3, 'SG/003/2024', 5, 3, 3, '2024-03-05', 'surat_gaji_003.pdf'),
+        (4, 'SG/004/2024', 5, 4, 4, '2024-04-05', 'surat_gaji_004.pdf'),
+        (5, 'SG/005/2024', 5, 5, 5, '2024-05-05', 'surat_gaji_005.pdf'),
+        (6, 'SG/006/2024', 5, 6, 3, '2024-06-05', 'surat_gaji_006.pdf'),
+        (7, 'SG/007/2024', 5, 7, 2, '2024-07-05', 'surat_gaji_007.pdf'),
+        (8, 'SG/008/2024', 5, 8, 1, '2024-08-05', 'surat_gaji_008.pdf'),
+        (9, 'SG/009/2024', 5, 9, 4, '2024-09-05', 'surat_gaji_009.pdf'),
+        (10, 'SG/010/2024', 5, 10, 5, '2024-10-05', 'surat_gaji_010.pdf');
 
 -- Dumping structure for table pengarsipan.tb_surat_keluar
 DROP TABLE IF EXISTS `tb_surat_keluar`;

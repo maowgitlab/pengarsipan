@@ -89,7 +89,8 @@
                 g.nip, 
                 b.id AS id_bidang,
                 b.nama_bidang, 
-                sg.tanggal_surat
+                sg.tanggal_surat,
+                sg.file
               FROM tb_surat_gaji sg
               LEFT JOIN tb_surat s ON sg.id_surat = s.id
               LEFT JOIN tb_gaji g ON sg.id_gaji = g.id
@@ -110,6 +111,7 @@
                 <th>NIP</th>
                 <th>Bidang</th>
                 <th>Tanggal Surat</th>
+                <th>File</th>
             </tr>
         </thead>
         <tbody>
@@ -123,6 +125,7 @@
                     <td><?= $row['nip']; ?></td>
                     <td><?= $row['nama_bidang']; ?></td>
                     <td><?= $row['tanggal_surat']; ?></td>
+                    <td><?= $row['file'] ? $row['file'] : '-'; ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>

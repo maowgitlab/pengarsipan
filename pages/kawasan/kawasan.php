@@ -1,3 +1,123 @@
+<?php
+$detailPenilaianKawasan = [];
+$detailQuery = mysqli_query(
+    $koneksi,
+    "SELECT pk.id_penilaian,
+            pk.id_kawasan,
+            i.nama_indikator,
+            pk.nilai,
+            pk.keterangan,
+            pk.tanggal_penilaian,
+            pk.bukti_file,
+            p.bulan,
+            p.tahun
+     FROM penilaian_kawasan pk
+     LEFT JOIN indikator_penilaian i ON pk.id_indikator = i.id_indikator
+     LEFT JOIN periode_penilaian p ON pk.id_periode = p.id_periode"
+);
+
+if ($detailQuery) {
+    while ($detailRow = mysqli_fetch_assoc($detailQuery)) {
+        $periodeLabel = '-';
+        if (!empty($detailRow['bulan']) && !empty($detailRow['tahun'])) {
+            $periodeLabel = date('F', mktime(0, 0, 0, (int) $detailRow['bulan'], 1)) . ' ' . $detailRow['tahun'];
+        }
+
+        $penilaianId = (int) ($detailRow['id_penilaian'] ?? 0);
+
+        $teamMembers = [];
+        if ($penilaianId > 0) {
+            $teamQuery = mysqli_query(
+                $koneksi,
+                "SELECT t.id_pegawai, p.nama_pegawai, p.jabatan, b.nama_bidang
+                 FROM penilaian_kawasan_tim t
+                 JOIN tb_pegawai p ON t.id_pegawai = p.id
+                 LEFT JOIN tb_bidang b ON p.id_bidang = b.id
+                 WHERE t.id_penilaian = '$penilaianId'
+                 ORDER BY p.nama_pegawai"
+            );
+
+            if ($teamQuery) {
+                while ($teamRow = mysqli_fetch_assoc($teamQuery)) {
+                    $teamMembers[] = [
+                        'nama' => $teamRow['nama_pegawai'] ?? '-',
+                        'jabatan' => $teamRow['jabatan'] ?? '',
+                        'bidang' => $teamRow['nama_bidang'] ?? ''
+                    ];
+                }
+            }
+        }
+
+        $attachments = [];
+        if ($penilaianId > 0) {
+            $attachmentQuery = mysqli_query(
+                $koneksi,
+                "SELECT file_name, original_name
+                 FROM penilaian_kawasan_files
+                 WHERE id_penilaian = '$penilaianId'
+                 ORDER BY id ASC"
+            );
+
+            if ($attachmentQuery) {
+                while ($attachmentRow = mysqli_fetch_assoc($attachmentQuery)) {
+                    if (empty($attachmentRow['file_name'])) {
+                        continue;
+                    }
+
+                    $attachments[] = [
+                        'file_name' => $attachmentRow['file_name'],
+                        'original_name' => $attachmentRow['original_name'] ?: $attachmentRow['file_name'],
+                        'url' => 'assets/file/bukti/' . $attachmentRow['file_name']
+                    ];
+                }
+            }
+
+            if (empty($attachments) && !empty($detailRow['bukti_file'])) {
+                $legacyName = mysqli_real_escape_string($koneksi, $detailRow['bukti_file']);
+                mysqli_query(
+                    $koneksi,
+                    "INSERT INTO penilaian_kawasan_files (id_penilaian, file_name, original_name)
+                     VALUES ('$penilaianId', '$legacyName', '$legacyName')"
+                );
+
+                $attachmentQuery = mysqli_query(
+                    $koneksi,
+                    "SELECT file_name, original_name
+                     FROM penilaian_kawasan_files
+                     WHERE id_penilaian = '$penilaianId'
+                     ORDER BY id ASC"
+                );
+
+                if ($attachmentQuery) {
+                    while ($attachmentRow = mysqli_fetch_assoc($attachmentQuery)) {
+                        if (empty($attachmentRow['file_name'])) {
+                            continue;
+                        }
+
+                        $attachments[] = [
+                            'file_name' => $attachmentRow['file_name'],
+                            'original_name' => $attachmentRow['original_name'] ?: $attachmentRow['file_name'],
+                            'url' => 'assets/file/bukti/' . $attachmentRow['file_name']
+                        ];
+                    }
+                }
+            }
+        }
+
+        $detailPenilaianKawasan[$detailRow['id_kawasan']][] = [
+            'indikator' => $detailRow['nama_indikator'] ?? '-',
+            'nilai' => $detailRow['nilai'],
+            'keterangan' => $detailRow['keterangan'] ?? '-',
+            'periode' => $periodeLabel,
+            'tanggal_penilaian' => $detailRow['tanggal_penilaian'] ?? '-',
+            'bukti' => $detailRow['bukti_file'] ? 'assets/file/bukti/' . $detailRow['bukti_file'] : null,
+            'bukti_nama' => $detailRow['bukti_file'] ?? '',
+            'tim' => $teamMembers,
+            'lampiran' => $attachments
+        ];
+    }
+}
+?>
 <div class="pagetitle">
     <h1>Kawasan</h1>
     <nav>
@@ -28,6 +148,7 @@
                                 <th scope="col">Kecamatan</th>
                                 <th scope="col">Luas (Ha)</th>
                                 <th scope="col">Jumlah Penduduk</th>
+                                <th scope="col">Detail Penilaian</th>
                                 <th scope="col">Status Layak</th>
                                 <?php if (isset($_SESSION['jabatan']) && $_SESSION['jabatan'] == 'admin') : ?>
                                     <th scope="col">Aksi</th>
@@ -48,6 +169,15 @@
                                     <td><?= htmlspecialchars($row['kecamatan']); ?></td>
                                     <td><?= htmlspecialchars($row['luas_ha']); ?></td>
                                     <td><?= htmlspecialchars($row['jumlah_penduduk']); ?></td>
+                                    <?php
+                                    $detailData = $detailPenilaianKawasan[$row['id_kawasan']] ?? [];
+                                    $detailJson = htmlspecialchars(json_encode(array_values($detailData), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
+                                    ?>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#modalDetail" data-detail="<?= $detailJson; ?>" data-kawasan="<?= htmlspecialchars($row['nama_kawasan'], ENT_QUOTES); ?>" data-status="<?= htmlspecialchars($row['status_layak'], ENT_QUOTES); ?>" onclick="showDetail(this)">
+                                            Detail
+                                        </button>
+                                    </td>
                                     <td><?= htmlspecialchars($row['status_layak']); ?></td>
                                     <?php if (isset($_SESSION['jabatan']) && $_SESSION['jabatan'] == 'admin') : ?>
                                         <td>
@@ -154,6 +284,28 @@
     </div>
 </div>
 
+<!-- Modal Detail -->
+<div class="modal fade" id="modalDetail" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detail Penilaian Kawasan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Nama Kawasan:</strong> <span id="detailNamaKawasan">-</span></p>
+                <p><strong>Status Layak:</strong> <span id="detailStatusLayak">-</span></p>
+                <div id="detailContent" class="table-responsive">
+                    <p class="text-muted mb-0">Belum ada penilaian yang tercatat.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Hapus -->
 <div class="modal fade" id="modalHapus" tabindex="-1">
     <div class="modal-dialog">
@@ -176,6 +328,111 @@
 </div>
 
 <script>
+    function escapeHtml(value) {
+        if (typeof value !== 'string') {
+            return value === null || value === undefined || value === '' ? '-' : value;
+        }
+
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+
+        return value.replace(/[&<>"']/g, function (m) {
+            return map[m];
+        });
+    }
+
+    function showDetail(button) {
+        const namaKawasan = button.getAttribute('data-kawasan') || '-';
+        const statusLayak = button.getAttribute('data-status') || '-';
+        let detailData = [];
+
+        try {
+            detailData = JSON.parse(button.getAttribute('data-detail') || '[]');
+        } catch (error) {
+            detailData = [];
+        }
+
+        document.getElementById('detailNamaKawasan').textContent = namaKawasan;
+        document.getElementById('detailStatusLayak').textContent = statusLayak;
+
+        const detailContainer = document.getElementById('detailContent');
+
+        if (!Array.isArray(detailData) || detailData.length === 0) {
+            detailContainer.innerHTML = '<p class="text-muted mb-0">Belum ada penilaian yang tercatat.</p>';
+            return;
+        }
+
+        const rows = detailData.map(function (item, index) {
+            const indikator = escapeHtml(item.indikator || '-');
+            const nilai = item.nilai !== null && item.nilai !== undefined && item.nilai !== '' ? item.nilai : '-';
+            const keterangan = escapeHtml(item.keterangan || '-');
+            const periode = escapeHtml(item.periode || '-');
+            const tanggal = escapeHtml(item.tanggal_penilaian || '-');
+            const timData = Array.isArray(item.tim) ? item.tim : [];
+            const timContent = timData.length ? timData.map(function (member) {
+                const name = escapeHtml(member.nama || '-');
+                const infoParts = [];
+                if (member.jabatan) {
+                    infoParts.push(escapeHtml(member.jabatan));
+                }
+                if (member.bidang) {
+                    infoParts.push(escapeHtml(member.bidang));
+                }
+                const infoText = infoParts.length ? ' (' + infoParts.join(' - ') + ')' : '';
+                return '<div>' + name + infoText + '</div>';
+            }).join('') : '<span class="text-muted">-</span>';
+
+            const lampiranData = Array.isArray(item.lampiran) ? item.lampiran : [];
+            let lampiranContent;
+            if (lampiranData.length) {
+                lampiranContent = lampiranData.map(function (file) {
+                    const url = escapeHtml(file.url || '#');
+                    const label = escapeHtml(file.original_name || file.file_name || 'Lampiran');
+                    return '<div><a href="' + url + '" target="_blank">' + label + '</a></div>';
+                }).join('');
+            } else if (item.bukti) {
+                const legacyLabel = escapeHtml(item.bukti_nama || 'Lihat');
+                lampiranContent = '<div><a href="' + escapeHtml(item.bukti) + '" target="_blank">' + legacyLabel + '</a></div>';
+            } else {
+                lampiranContent = '<span class="text-muted">-</span>';
+            }
+
+            return '<tr>' +
+                '<td>' + (index + 1) + '</td>' +
+                '<td>' + indikator + '</td>' +
+                '<td>' + nilai + '</td>' +
+                '<td>' + keterangan + '</td>' +
+                '<td>' + periode + '</td>' +
+                '<td>' + tanggal + '</td>' +
+                '<td>' + timContent + '</td>' +
+                '<td>' + lampiranContent + '</td>' +
+            '</tr>';
+        }).join('');
+
+        detailContainer.innerHTML = '<div class="table-responsive">' +
+            '<table class="table table-sm table-striped mb-0">' +
+                '<thead>' +
+                    '<tr>' +
+                        '<th>#</th>' +
+                        '<th>Indikator</th>' +
+                        '<th>Nilai</th>' +
+                        '<th>Keterangan</th>' +
+                        '<th>Periode</th>' +
+                        '<th>Tanggal Penilaian</th>' +
+                        '<th>Tim Penilai</th>' +
+                        '<th>Lampiran</th>' +
+                    '</tr>' +
+                '</thead>' +
+                '<tbody>' + rows + '</tbody>' +
+            '</table>' +
+        '</div>';
+    }
+
     function editData(id, nama_kawasan, kecamatan, luas_ha, jumlah_penduduk, status_layak) {
         document.getElementById('idEdit').value = id;
         document.getElementById('nama_kawasan_edit').value = nama_kawasan;
